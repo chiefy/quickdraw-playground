@@ -2,16 +2,50 @@
 
 
 [[projects]]
-  digest = "1:a21bc477fa894d56ee83e6cb04eba08d183366ad5a717e36c51867c04f2a5ad9"
-  name = "github.com/mattn/go-sqlite3"
+  branch = "master"
+  digest = "1:125f098c5294814b5d9ce2194f03a435c35a6208f029e61681bed9a893d68133"
+  name = "github.com/alecthomas/template"
+  packages = [
+    ".",
+    "parse",
+  ]
+  pruneopts = "UT"
+  revision = "fb15b899a75114aa79cc930e33c46b577cc664b1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:f780e2e814981de9dbdc2ca49d6c91d4aa4e2a1639ebc4106fafb0dc54fa5bd8"
+  name = "github.com/alecthomas/units"
   packages = ["."]
   pruneopts = "UT"
-  revision = "53cff3fcebd1e177d04129dc131523635bc45d3d"
-  version = "v2.0.2"
+  revision = "f65c72e2690dc4b403c8bd637baf4611cd4c069b"
+
+[[projects]]
+  digest = "1:9ff22c26414baf7deaf74f2a788fe7b97666048bcbe346c52cfe823442abbdfb"
+  name = "github.com/lib/pq"
+  packages = [
+    ".",
+    "oid",
+    "scram",
+  ]
+  pruneopts = "UT"
+  revision = "99274577be97ac9b1d95a2d61d566dc9b7cc6a54"
+  version = "v1.3.0"
+
+[[projects]]
+  digest = "1:c06d9e11d955af78ac3bbb26bd02e01d2f61f689e1a3bce2ef6fb683ef8a7f2d"
+  name = "gopkg.in/alecthomas/kingpin.v2"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "947dcec5ba9c011838740e680966fd7087a71d0d"
+  version = "v2.2.6"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  input-imports = ["github.com/mattn/go-sqlite3"]
+  input-imports = [
+    "github.com/lib/pq",
+    "gopkg.in/alecthomas/kingpin.v2",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1
