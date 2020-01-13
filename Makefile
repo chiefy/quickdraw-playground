@@ -21,3 +21,7 @@ start-postgres:
 .PHONY: import-csv 
 import-csv: vendor csv 
 	@go run . --import
+
+.PHONY: ui 
+ui:
+	@cd qd-explorer && npm run serve

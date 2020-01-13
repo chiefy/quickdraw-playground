@@ -26,6 +26,9 @@ type Draw struct {
 const (
 	fetchURL = "https://data.ny.gov/resource/7sqk-ycpk.json"
 	dateForm = "2006-01-02T00:00:00.000"
+
+	LowPick  = 1
+	HighPick = 80
 )
 
 // ImportLatest imports the latest entries from the API
@@ -52,19 +55,41 @@ func ImportLatest(db *sql.DB) error {
 	return nil
 }
 
+func GetWinningNumbersCount(db *sql.DB) (map[int]int, error) {
+	counts := map[int]int{}
+	query := "SELECT * FROM totals"
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var pick, ct int
+		if err := rows.Scan(&pick, &ct); err != nil {
+			return nil, err
+		}
+		counts[pick] = ct
+	}
+	return counts, nil
+}
+
 func (d Draw) WinningNumbersString() string {
 	ss := ""
-	for _, n := range d.WinningNumbers {
-		ss = fmt.Sprintf("%s, %s", ss, strconv.Itoa(n))
+	for i, n := range d.WinningNumbers {
+		var comma = ","
+		if i == 0 {
+			comma = ""
+		}
+		ss = fmt.Sprintf("%s%s %s", ss, comma, strconv.Itoa(n))
 	}
 	return ss
 }
 
 func (d Draw) Insert(db *sql.DB) error {
 	a := fmt.Sprintf("ARRAY [%s]", d.WinningNumbersString())
-	sql := fmt.Sprintf("INSERT INTO draws (id, drawdate, drawtime, picks, extra) VALUES (%d, '%s', '%s', %s, %d)",
+	insert := fmt.Sprintf("INSERT INTO draws (id, drawdate, drawtime, picks, extra) VALUES (%d, '%s', '%s', %s, %d)",
 		d.DrawNumber, d.DrawDate.Format("2006-01-02"), d.DrawTime, a, d.Extra)
-	_, err := db.Exec(sql)
+	_, err := db.Exec(insert)
 	if err != nil {
 		return err
 	}
@@ -80,7 +105,6 @@ func (d Draw) CheckAndInsert(db *sql.DB) error {
 	case err == sql.ErrNoRows:
 		return d.Insert(db)
 	case err == nil:
-		log.Println(found)
 		return nil
 	default:
 		return err
