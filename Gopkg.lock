@@ -21,6 +21,17 @@
   revision = "f65c72e2690dc4b403c8bd637baf4611cd4c069b"
 
 [[projects]]
+  digest = "1:10d6aa505e0698b315d19aa9fe91bcf8e7cb3fa93a7acca41f1b41c6e669050b"
+  name = "github.com/go-chi/chi"
+  packages = [
+    ".",
+    "middleware",
+  ]
+  pruneopts = "UT"
+  revision = "2db61557f36b2f4caa20ce6ef50e98bac0f7fce5"
+  version = "v4.0.3"
+
+[[projects]]
   digest = "1:9ff22c26414baf7deaf74f2a788fe7b97666048bcbe346c52cfe823442abbdfb"
   name = "github.com/lib/pq"
   packages = [
@@ -44,6 +55,8 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/go-chi/chi",
+    "github.com/go-chi/chi/middleware",
     "github.com/lib/pq",
     "gopkg.in/alecthomas/kingpin.v2",
   ]
