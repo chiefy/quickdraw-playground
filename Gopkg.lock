@@ -32,6 +32,14 @@
   version = "v4.0.3"
 
 [[projects]]
+  digest = "1:dfa416a1bb8139f30832543340f972f65c0db9932034cb6a1b42c5ac615a3fb8"
+  name = "github.com/go-chi/cors"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "dba6525398619dead495962a916728e7ee2ca322"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:9ff22c26414baf7deaf74f2a788fe7b97666048bcbe346c52cfe823442abbdfb"
   name = "github.com/lib/pq"
   packages = [
@@ -57,6 +65,7 @@
   input-imports = [
     "github.com/go-chi/chi",
     "github.com/go-chi/chi/middleware",
+    "github.com/go-chi/cors",
     "github.com/lib/pq",
     "gopkg.in/alecthomas/kingpin.v2",
   ]

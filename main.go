@@ -4,6 +4,7 @@ import (
 	"github.com/chiefy/quick-draw-explorer/pkg"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/cors"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
 	"database/sql"
@@ -41,20 +42,31 @@ func connectToDb() *sql.DB {
 
 func doServeAPI() {
 	r := chi.NewRouter()
+
+	cors := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:8081"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300, // Maximum value not ignored by any of major browsers
+	})
+
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(cors.Handler)
 
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/freq/{viewname}", func(w http.ResponseWriter, r *http.Request) {
 		db := connectToDb()
 		defer db.Close()
-		counts, err := quickdraw.GetWinningNumbersCount(db)
+		viewName := chi.URLParam(r, "viewname")
+		counts, err := quickdraw.GetWinningNumbersFor(viewName, db)
 		if err != nil {
 			w.Write([]byte("error"))
 			return
 		}
-		log.Println(counts)
 		d, err := json.Marshal(counts)
 		if err != nil {
 			w.Write([]byte("error"))

@@ -55,9 +55,9 @@ func ImportLatest(db *sql.DB) error {
 	return nil
 }
 
-func GetWinningNumbersCount(db *sql.DB) (map[int]int, error) {
+func getFreqView(viewName string, db *sql.DB) (map[int]int, error) {
 	counts := map[int]int{}
-	query := "SELECT * FROM totals"
+	query := fmt.Sprintf("SELECT * FROM %s", viewName)
 	rows, err := db.Query(query)
 	if err != nil {
 		return nil, err
@@ -71,6 +71,21 @@ func GetWinningNumbersCount(db *sql.DB) (map[int]int, error) {
 		counts[pick] = ct
 	}
 	return counts, nil
+
+}
+
+func GetWinningNumbersFor(viewName string, db *sql.DB) (map[int]int, error) {
+	switch viewName {
+	case "oneday":
+		return getFreqView("freq_1day", db)
+	case "oneweek":
+		return getFreqView("freq_7day", db)
+	case "onemonth":
+		return getFreqView("freq_30day", db)
+	case "alltime":
+		return getFreqView("freq_all_time", db)
+	}
+	return nil, fmt.Errorf("no valid freq time specified")
 }
 
 func (d Draw) WinningNumbersString() string {

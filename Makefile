@@ -22,6 +22,14 @@ start-postgres:
 import-csv: vendor csv 
 	@go run . --import
 
+.PHONY: serve
+serve:
+	@go run . --serve
+
 .PHONY: ui 
 ui:
-	@cd qd-explorer && npm run serve
+	@cd ui && quasar dev
+
+.PHONY: makerange
+makerange:
+	@/bin/bash -c 'for n in {1..80}; do printf %i, $$n; done'
