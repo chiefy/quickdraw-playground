@@ -27,6 +27,8 @@
         >
           <q-item
             clickable
+            exact
+            :to="menuItem.link"
             :active="menuItem.label === 'Outbox'"
             v-ripple
           >
@@ -52,6 +54,19 @@ const menuList = [
   {
     icon: 'trending_up',
     label: '24 Hours',
+    link: '/totals/oneday',
+    separator: true
+  },
+  {
+    icon: 'timeline',
+    label: 'One Week',
+    link: '/totals/oneweek',
+    separator: true
+  },
+  {
+    icon: 'timeline',
+    label: 'One Month',
+    link: '/totals/onemonth',
     separator: true
   },
   {
@@ -62,6 +77,7 @@ const menuList = [
   {
     icon: 'view_list',
     label: 'Table Explorer',
+    link: '/query',
     separator: true
   }
 ]

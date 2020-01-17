@@ -40,6 +40,14 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:59f6147a4770527f7e44b4e67e6c59429d0468a37af2ce3fa71cf06b92da6e3e"
+  name = "github.com/jasonlvhit/gocron"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "5c21418a78e8acd5ffefca47dc353df67222e5c8"
+  version = "0.1"
+
+[[projects]]
   digest = "1:9ff22c26414baf7deaf74f2a788fe7b97666048bcbe346c52cfe823442abbdfb"
   name = "github.com/lib/pq"
   packages = [
@@ -66,6 +74,7 @@
     "github.com/go-chi/chi",
     "github.com/go-chi/chi/middleware",
     "github.com/go-chi/cors",
+    "github.com/jasonlvhit/gocron",
     "github.com/lib/pq",
     "gopkg.in/alecthomas/kingpin.v2",
   ]

@@ -16,53 +16,71 @@
 <script>
 import DrawBoard from 'components/DrawBoard'
 
+const numColors = 10
+
 export default {
   name: 'Main',
   components: {
     DrawBoard
   },
   data () {
-    return {
-      nums: [],
-      leastPicks: 0,
-      mostPicks: 0,
-      pickDiff: 0
+    return this.defaultData()
+  },
+  watch: {
+    $route (to, from) {
+      this.getViewData()
     }
   },
   methods: {
+    defaultData () {
+      return {
+        nums: [],
+        leastPicks: 0,
+        mostPicks: 0,
+        pickDiff: 0
+      }
+    },
     getColor (numPicks) {
-      let calc = (numPicks / this.pickDiff)
-      console.log('picks = ' + calc + ' ' + numPicks)
-      return 'blue-1'
+      let pickGroups = Math.ceil(this.pickDiff / numColors)
+      let colorIdx = numColors - Math.round((this.mostPicks - numPicks) / pickGroups)
+      colorIdx = colorIdx === 0 ? 1 : colorIdx
+      return 'blue-' + colorIdx
+    },
+    resetData () {
+      Object.assign(this.$data, this.defaultData())
+    },
+    getViewData () {
+      this.resetData()
+      return this.$axios.get('http://localhost:9090/freq/' + this.$route.params.viewType)
+        .then((response) => {
+          const addPick = (n) => {
+            let numPicks = response.data[n]
+            if (numPicks > this.mostPicks) {
+              this.mostPicks = numPicks
+            }
+            if (numPicks < this.leastPicks || this.leastPicks === 0) {
+              this.leastPicks = numPicks
+            }
+            this.nums.push({
+              num: n,
+              picks: numPicks
+            })
+          }
+          this.lodash.each(this.lodash.range(1, 81), addPick.bind(this))
+          this.pickDiff = this.mostPicks - this.leastPicks
+        })
+        .catch(() => {
+          this.$q.notify({
+            color: 'negative',
+            position: 'top',
+            message: 'Loading Data Failed :(',
+            icon: 'report_problem'
+          })
+        })
     }
   },
   mounted () {
-    return this.$axios.get('http://localhost:9090/freq/onemonth')
-      .then((response) => {
-        const addPick = (n) => {
-          let numPicks = response.data[n]
-          if (numPicks > this.mostPicks) {
-            this.mostPicks = numPicks
-          }
-          if (numPicks < this.leastPicks || this.leastPicks === 0) {
-            this.leastPicks = numPicks
-          }
-          this.nums.push({
-            num: n,
-            picks: numPicks
-          })
-        }
-        this.lodash.each(this.lodash.range(1, 81), addPick.bind(this))
-        this.pickDiff = this.mostPicks - this.leastPicks
-      })
-      .catch(() => {
-        this.$q.notify({
-          color: 'negative',
-          position: 'top',
-          message: 'Loading failed',
-          icon: 'report_problem'
-        })
-      })
+    this.getViewData()
   }
 }
 </script>

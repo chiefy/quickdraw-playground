@@ -45,7 +45,8 @@ module.exports = function (ctx) {
 
       components: [
         'QBtn',
-        'QTooltip'
+        'QTooltip',
+        'QDate'
       ],
       directives: [],
 

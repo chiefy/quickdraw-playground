@@ -1,7 +1,7 @@
 package quickdraw
 
 import (
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 
 	"database/sql"
 	"encoding/json"
@@ -19,9 +19,11 @@ type Draw struct {
 	DrawDate       time.Time `json:"draw_date"`
 	DrawNumber     int       `json:"draw_number"`
 	DrawTime       string    `json:"draw_time"`
-	WinningNumbers []int     `json:"winning_numbers"`
+	WinningNumbers []int64   `json:"winning_numbers"`
 	Extra          int       `json:"extra_multiplier"`
 }
+
+type Draws []*Draw
 
 const (
 	fetchURL = "https://data.ny.gov/resource/7sqk-ycpk.json"
@@ -71,7 +73,6 @@ func getFreqView(viewName string, db *sql.DB) (map[int]int, error) {
 		counts[pick] = ct
 	}
 	return counts, nil
-
 }
 
 func GetWinningNumbersFor(viewName string, db *sql.DB) (map[int]int, error) {
@@ -88,6 +89,34 @@ func GetWinningNumbersFor(viewName string, db *sql.DB) (map[int]int, error) {
 	return nil, fmt.Errorf("no valid freq time specified")
 }
 
+func GetDraws(db *sql.DB, pageSize int) (Draws, error) {
+	query := fmt.Sprintf("SELECT * FROM draws ORDER BY draws.id DESC LIMIT %d", pageSize)
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	draws := []*Draw{}
+	defer rows.Close()
+	for rows.Next() {
+		var dn, de int
+		var wn pq.Int64Array
+		var dd, dt string
+		if err := rows.Scan(&dn, &dd, &dt, &wn, &de); err != nil {
+			return nil, err
+		}
+		parsedDate, _ := time.Parse(time.RFC3339, dd)
+		d := &Draw{
+			DrawNumber:     dn,
+			DrawDate:       parsedDate,
+			Extra:          de,
+			WinningNumbers: []int64(wn),
+			DrawTime:       dt,
+		}
+		draws = append(draws, d)
+	}
+	return draws, nil
+}
+
 func (d Draw) WinningNumbersString() string {
 	ss := ""
 	for i, n := range d.WinningNumbers {
@@ -95,7 +124,7 @@ func (d Draw) WinningNumbersString() string {
 		if i == 0 {
 			comma = ""
 		}
-		ss = fmt.Sprintf("%s%s %s", ss, comma, strconv.Itoa(n))
+		ss = fmt.Sprintf("%s%s %s", ss, comma, strconv.Itoa(int(n)))
 	}
 	return ss
 }
@@ -149,13 +178,13 @@ func (d *Draw) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	winNums := strings.Split(temp["winning_numbers"], " ")
-	d.WinningNumbers = make([]int, 0)
+	d.WinningNumbers = make([]int64, 0)
 	for _, n := range winNums {
 		w, err := strconv.Atoi(n)
 		if err != nil {
 			return err
 		}
-		d.WinningNumbers = append(d.WinningNumbers, w)
+		d.WinningNumbers = append(d.WinningNumbers, int64(w))
 	}
 	return nil
 }

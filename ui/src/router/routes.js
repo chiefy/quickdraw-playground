@@ -4,7 +4,8 @@ const routes = [
     path: '/',
     component: () => import('layouts/MyLayout.vue'),
     children: [
-      { path: '', component: () => import('pages/Index.vue') }
+      { path: 'totals/:viewType?', component: () => import('pages/Index.vue') },
+      { path: 'query/', component: () => import('pages/Table.vue') }
     ]
   }
 ]
