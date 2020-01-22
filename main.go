@@ -4,11 +4,13 @@ import (
 	"github.com/chiefy/quick-draw-explorer/pkg"
 	"github.com/jasonlvhit/gocron"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	"strconv"
 
 	"database/sql"
 	"fmt"
 	"log"
 	"os"
+	"time"
 )
 
 var (
@@ -16,24 +18,38 @@ var (
 	doPoll      = kingpin.Flag("poll", "Poll the API for latest data").Bool()
 	doServe     = kingpin.Flag("serve", "Start the API server").Bool()
 	allowedURLs string
+
+	apiPort int
+	apiHost string
 )
 
 const (
 	csvFile    = "quick-draw.csv"
-	dbHost     = "localhost"
+	dbHost     = "db"
 	dbPort     = 5432
 	dbUser     = "postgres"
 	dbPassword = "supersecret"
 	dbName     = "quickdraw"
 
-	apiPort = 9090
-	apiHost = "localhost"
+	defaultAPIPort    = 9090
+	defaultAPIHost    = "localhost"
+	defaultAllowedURL = "http://localhost:8080"
 )
 
 func init() {
 	allowedURLs = os.Getenv("ALLOWED_CORS_URLS")
 	if allowedURLs == "" {
-		allowedURLs = "http://localhost:8081"
+		allowedURLs = defaultAllowedURL
+	}
+	var err error
+	apiPortStr := os.Getenv("API_PORT")
+	if apiPort, err = strconv.Atoi(apiPortStr); err != nil {
+		apiPort = defaultAPIPort
+	}
+
+	apiHost = os.Getenv("API_HOST")
+	if apiHost == "" {
+		apiHost = defaultAPIHost
 	}
 }
 
@@ -64,6 +80,16 @@ func main() {
 	if *doImport {
 		db := connectToDb()
 		defer db.Close()
+		for {
+			log.Println("Checking for connection to DB...")
+			err := db.Ping()
+			if err != nil {
+				log.Println("Could not connect to DB, retrying in 5s...")
+			} else {
+				break
+			}
+			time.Sleep(5 * time.Second)
+		}
 		err := quickdraw.ImportPicks(db, csvFile)
 		if err != nil {
 			log.Fatal(err)
@@ -80,7 +106,7 @@ func main() {
 		defer db.Close()
 
 		go fetchLatestDrawsCron()
-		a := quickdraw.QuickdrawAPI{
+		a := quickdraw.API{
 			Db:          db,
 			Host:        apiHost,
 			Port:        apiPort,

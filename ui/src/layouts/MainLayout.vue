@@ -29,7 +29,6 @@
             clickable
             exact
             :to="menuItem.link"
-            :active="menuItem.label === 'Outbox'"
             v-ripple
           >
             <q-item-section avatar>
@@ -72,6 +71,7 @@ const menuList = [
   {
     icon: 'timeline',
     label: 'All-Time',
+    link: '/totals/alltime',
     separator: true
   },
   {
@@ -82,7 +82,7 @@ const menuList = [
   }
 ]
 export default {
-  name: 'MyLayout',
+  name: 'MainLayout',
 
   data () {
     return {

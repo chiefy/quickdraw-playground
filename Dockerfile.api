@@ -1,0 +1,10 @@
+FROM golang AS build-env
+WORKDIR /go/src/github.com/chiefy/quick-draw-explorer
+COPY . .
+RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
+    go build -v -o /quickdraw && chmod +x /quickdraw
+
+FROM alpine
+COPY --from=build-env /quickdraw /quickdraw
+ENTRYPOINT [ "/quickdraw" ]
+CMD [ "--serve" ]

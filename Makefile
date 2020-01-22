@@ -1,5 +1,14 @@
-
 csvurl := https://data.ny.gov/api/views/7sqk-ycpk/rows.csv?accessType=DOWNLOAD&bom=true&format=true&sorting=true
+
+.PHONY: all
+all: clean csv vendor build-ui 
+	@docker-compose rm -fv 
+	@docker-compose build 
+	@HOST=$(HOST) docker-compose up
+
+.PHONY: stop 
+stop:
+	@docker-compose stop; docker-compose rm -fv
 
 vendor:
 	@dep ensure
@@ -9,7 +18,7 @@ csv: quick-draw.csv
 
 .PHONY: clean
 clean:
-	@-rm -rf vendor quick-draw.csv
+	@-rm -rf vendor quick-draw.csv ui/dist/spa
 
 quick-draw.csv: 
 	@curl -LSs "$(csvurl)" | awk -F, '{seen[$$1,$$2]++;seen[$$2,$$1]++}seen[$$1,$$2]==1 && seen[$$2,$$1]==1' > $@
@@ -29,6 +38,12 @@ serve:
 .PHONY: ui 
 ui:
 	@cd ui && quasar dev
+
+.PHONY: build-ui
+build-ui: ui/dist/spa 
+
+ui/dist/spa:
+	@cd ui && quasar build 
 
 .PHONY: makerange
 makerange:

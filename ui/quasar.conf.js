@@ -66,6 +66,14 @@ module.exports = function (ctx) {
       showProgress: true,
       gzip: false,
       analyze: false,
+      env: ctx.dev
+        ? {
+          API: JSON.stringify('http://localhost:9090')
+        }
+        : {
+          API: JSON.stringify('http://localhost:8080/api')
+        },
+
       // Options below are automatically set depending on the env, set them if you want to override
       // preloadChunks: false,
       // extractCSS: false,

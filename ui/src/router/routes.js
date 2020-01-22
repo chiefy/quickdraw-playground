@@ -1,10 +1,23 @@
 
+const viewTypeTitles = {
+  'oneday': 'Last 24 Hours',
+  'oneweek': 'Last Seven Days',
+  'onemonth': 'Last Month',
+  'alltime': 'All-Time'
+}
+
 const routes = [
   {
     path: '/',
-    component: () => import('layouts/MyLayout.vue'),
+    component: () => import('layouts/MainLayout.vue'),
     children: [
-      { path: 'totals/:viewType?', component: () => import('pages/Index.vue') },
+      {
+        path: 'totals/:viewType?',
+        meta: {
+          viewTypeTitles
+        },
+        component: () => import('pages/Index.vue')
+      },
       { path: 'query/', component: () => import('pages/Table.vue') }
     ]
   }

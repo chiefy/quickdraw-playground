@@ -10,17 +10,26 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 const (
 	pageSize = 50
 )
 
-type QuickdrawAPI struct {
+// API represents the API singleton
+type API struct {
 	Db          *sql.DB
 	Host        string
 	Port        int
 	AllowedURLs []string
+}
+
+type TableResponse struct {
+	Draws    []*Draw `json:"draws"`
+	Total    int     `json:"total"`
+	Page     int     `json:"page"`
+	PageSize int     `json:"page_size"`
 }
 
 func paginate(next http.Handler) http.Handler {
@@ -31,13 +40,39 @@ func paginate(next http.Handler) http.Handler {
 	})
 }
 
-func (q QuickdrawAPI) listDraws(w http.ResponseWriter, r *http.Request) {
-	draws, err := GetDraws(q.Db, pageSize)
+func (a API) listDraws(w http.ResponseWriter, r *http.Request) {
+	pageNum, err := strconv.Atoi(chi.URLParam(r, "pageNum"))
+	if err != nil {
+		log.Println("could not convert p url param to int, using 1", err)
+		pageNum = 1
+	}
+	pageSize, err := strconv.Atoi(chi.URLParam(r, "pageSize"))
+	if err != nil {
+		log.Println("could not convert rpp url param to int, using 25")
+		pageSize = 25
+	}
+	sortBy := chi.URLParam(r, "sortBy")
+	sortDir := chi.URLParam(r, "sortDir")
+
+	draws, err := GetDraws(a.Db, pageNum, pageSize, sortBy, sortDir)
 	if err != nil {
 		w.Write([]byte(fmt.Sprintf("GetDraws error %s", err)))
 		return
 	}
-	drawsJSON, err := json.Marshal(&draws)
+
+	totalCount, err := GetTotalRowsCount(a.Db)
+	if err != nil {
+		w.Write([]byte(fmt.Sprintf("GetTotalRowsCount error %s", err)))
+		return
+	}
+	res := &TableResponse{
+		Draws:    draws,
+		Total:    totalCount,
+		Page:     pageNum,
+		PageSize: pageSize,
+	}
+
+	drawsJSON, err := json.Marshal(&res)
 	if err != nil {
 		w.Write([]byte("JSON marshaling error"))
 		return
@@ -46,9 +81,9 @@ func (q QuickdrawAPI) listDraws(w http.ResponseWriter, r *http.Request) {
 	w.Write(drawsJSON)
 }
 
-func (q QuickdrawAPI) freqView(w http.ResponseWriter, r *http.Request) {
+func (a API) freqView(w http.ResponseWriter, r *http.Request) {
 	viewName := chi.URLParam(r, "viewname")
-	counts, err := GetWinningNumbersFor(viewName, q.Db)
+	counts, err := GetWinningNumbersFor(viewName, a.Db)
 	if err != nil {
 		w.Write([]byte("error"))
 		return
@@ -62,11 +97,12 @@ func (q QuickdrawAPI) freqView(w http.ResponseWriter, r *http.Request) {
 	w.Write(d)
 }
 
-func (q *QuickdrawAPI) Serve() {
+// Serve starts the API server
+func (a *API) Serve() {
 	r := chi.NewRouter()
 
 	cors := cors.New(cors.Options{
-		AllowedOrigins:   q.AllowedURLs,
+		AllowedOrigins:   a.AllowedURLs,
 		AllowedMethods:   []string{"GET", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
@@ -80,13 +116,13 @@ func (q *QuickdrawAPI) Serve() {
 	r.Use(middleware.Recoverer)
 	r.Use(cors.Handler)
 
-	r.Route("/", func(r chi.Router) {
+	r.Route("/api", func(r chi.Router) {
 		// r.With(paginate).Get("/draws", q.listDraws)
-		r.Get("/draws", q.listDraws)
-		r.Get("/freq/{viewname}", q.freqView)
+		r.Get("/draws/p{pageNum}/s{pageSize}/b{sortBy}/{sortDir}", a.listDraws)
+		r.Get("/freq/{viewname}", a.freqView)
 	})
 
-	s := fmt.Sprintf("%s:%d", q.Host, q.Port)
+	s := fmt.Sprintf("%s:%d", a.Host, a.Port)
 	log.Println("Quickdraw Explorer Serving on " + s)
 	log.Fatal(http.ListenAndServe(s, r))
 }

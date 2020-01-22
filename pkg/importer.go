@@ -1,8 +1,6 @@
 package quickdraw
 
 import (
-	_ "github.com/lib/pq"
-
 	"database/sql"
 	"encoding/csv"
 	"fmt"
@@ -60,16 +58,17 @@ func ImportPicks(db *sql.DB, csvFile string) error {
 		if err != nil {
 			return err
 		}
-
 		splitPicks := strings.Split(record[3], " ")
 		joinedPicks := fmt.Sprintf("ARRAY [%s]", strings.Join(splitPicks, ","))
-		sqlStatement = fmt.Sprint(sqlStatement + "(" + record[1] + "," + "'" + record[0] + "','" + record[2] + "'," + joinedPicks + "," + record[4] + ")")
+		sqlStatement = fmt.Sprint(sqlStatement + "(" + record[1] + "," + "'" + record[0] +
+			"','" + record[2] + "'," + joinedPicks + "," + record[4] + ")")
 
 		if count == bulkInsertCount {
 			_, err = db.Exec(sqlStatement)
 			if err != nil {
 				log.Println(sqlStatement)
 				log.Println(err)
+				os.Exit(1)
 			}
 			totalInserts += count
 			log.Println("Bulk inserting", count, totalInserts)
@@ -84,5 +83,5 @@ func ImportPicks(db *sql.DB, csvFile string) error {
 		return err
 	}
 
-	return nil
+	return RefreshViews(db)
 }

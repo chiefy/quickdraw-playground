@@ -23,15 +23,32 @@ type Draw struct {
 	Extra          int       `json:"extra_multiplier"`
 }
 
+// Draws is a collection of Draw
 type Draws []*Draw
 
 const (
 	fetchURL = "https://data.ny.gov/resource/7sqk-ycpk.json"
 	dateForm = "2006-01-02T00:00:00.000"
-
-	LowPick  = 1
-	HighPick = 80
+	// LowPick is the lowest pick number available
+	LowPick = 1
+	// HighPick is the highest pick number available
+	HighPick          = 80
+	refreshViewsQuery = `
+	REFRESH MATERIALIZED VIEW freq_1day;
+	REFRESH MATERIALIZED VIEW freq_7day;
+	REFRESH MATERIALIZED VIEW freq_30day;
+	REFRESH MATERIALIZED VIEW freq_all_time;
+	`
 )
+
+// RefreshViews will refresh the materialized views
+func RefreshViews(db *sql.DB) error {
+	_, err := db.Query(refreshViewsQuery)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 // ImportLatest imports the latest entries from the API
 func ImportLatest(db *sql.DB) error {
@@ -54,7 +71,7 @@ func ImportLatest(db *sql.DB) error {
 			return err
 		}
 	}
-	return nil
+	return RefreshViews(db)
 }
 
 func getFreqView(viewName string, db *sql.DB) (map[int]int, error) {
@@ -75,6 +92,7 @@ func getFreqView(viewName string, db *sql.DB) (map[int]int, error) {
 	return counts, nil
 }
 
+// GetWinningNumbersFor retrieves a view in the database relating to the past winning numbers based on the viewname
 func GetWinningNumbersFor(viewName string, db *sql.DB) (map[int]int, error) {
 	switch viewName {
 	case "oneday":
@@ -89,8 +107,25 @@ func GetWinningNumbersFor(viewName string, db *sql.DB) (map[int]int, error) {
 	return nil, fmt.Errorf("no valid freq time specified")
 }
 
-func GetDraws(db *sql.DB, pageSize int) (Draws, error) {
-	query := fmt.Sprintf("SELECT * FROM draws ORDER BY draws.id DESC LIMIT %d", pageSize)
+// GetTotalRowsCount gets the total number of records in the database for pagination purposes
+func GetTotalRowsCount(db *sql.DB) (int, error) {
+	var totalRows int
+	totalRowsQuery := "SELECT count(*) FROM draws"
+	row := db.QueryRow(totalRowsQuery)
+	err := row.Scan(&totalRows)
+	if err != nil {
+		return 0, err
+	}
+	return totalRows, nil
+}
+
+// GetDraws queries all draws based on the arguments provided
+func GetDraws(db *sql.DB, pageNum int, pageSize int, orderBy string, sortDir string) (Draws, error) {
+	var offset int = 0
+	if pageNum > 1 {
+		offset = pageNum * pageSize
+	}
+	query := fmt.Sprintf("SELECT * FROM draws ORDER BY draws.%s %s OFFSET %d LIMIT %d", orderBy, sortDir, offset, pageSize)
 	rows, err := db.Query(query)
 	if err != nil {
 		return nil, err
@@ -117,6 +152,7 @@ func GetDraws(db *sql.DB, pageSize int) (Draws, error) {
 	return draws, nil
 }
 
+// WinningNumbersString converts the winning numbers array to a string value
 func (d Draw) WinningNumbersString() string {
 	ss := ""
 	for i, n := range d.WinningNumbers {
@@ -129,6 +165,7 @@ func (d Draw) WinningNumbersString() string {
 	return ss
 }
 
+// Insert inserts a draw into the database
 func (d Draw) Insert(db *sql.DB) error {
 	a := fmt.Sprintf("ARRAY [%s]", d.WinningNumbersString())
 	insert := fmt.Sprintf("INSERT INTO draws (id, drawdate, drawtime, picks, extra) VALUES (%d, '%s', '%s', %s, %d)",
@@ -141,6 +178,7 @@ func (d Draw) Insert(db *sql.DB) error {
 	return nil
 }
 
+// CheckAndInsert checks if a draw exists and if it doesn't, inserts it into the database
 func (d Draw) CheckAndInsert(db *sql.DB) error {
 	var found int
 	row := db.QueryRow(fmt.Sprintf("SELECT id FROM draws WHERE id = %d", d.DrawNumber))
@@ -155,6 +193,7 @@ func (d Draw) CheckAndInsert(db *sql.DB) error {
 	}
 }
 
+// UnmarshalJSON unmarshals custom into Draw struct
 func (d *Draw) UnmarshalJSON(b []byte) error {
 	var temp map[string]string
 	err := json.Unmarshal(b, &temp)

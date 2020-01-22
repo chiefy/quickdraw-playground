@@ -1,6 +1,7 @@
 <template>
   <q-page class="flex flex-center">
     <div class="q-pa-md q-gutter-sm">
+      <h3>{{ viewType }}</h3>
       <draw-board
         v-for="p in nums"
         v-bind:key="p.num"
@@ -17,6 +18,7 @@
 import DrawBoard from 'components/DrawBoard'
 
 const numColors = 10
+const apiURL = process.env.API || ''
 
 export default {
   name: 'Main',
@@ -37,7 +39,8 @@ export default {
         nums: [],
         leastPicks: 0,
         mostPicks: 0,
-        pickDiff: 0
+        pickDiff: 0,
+        viewType: null
       }
     },
     getColor (numPicks) {
@@ -51,7 +54,8 @@ export default {
     },
     getViewData () {
       this.resetData()
-      return this.$axios.get('http://localhost:9090/freq/' + this.$route.params.viewType)
+      this.viewType = this.$route.meta.viewTypeTitles[this.$route.params.viewType]
+      return this.$axios.get(apiURL + '/freq/' + this.$route.params.viewType)
         .then((response) => {
           const addPick = (n) => {
             let numPicks = response.data[n]

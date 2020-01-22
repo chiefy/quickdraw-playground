@@ -1,3 +1,5 @@
+\c quickdraw;
+
 CREATE TABLE draws (
    id INT PRIMARY KEY,
    drawdate DATE NOT NULL,
