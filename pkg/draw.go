@@ -50,6 +50,21 @@ func RefreshViews(db *sql.DB) error {
 	return nil
 }
 
+// ScrapeLiveDraws scrapes the live website for new draw data and inserts it into db
+func ScrapeLiveDraws(db *sql.DB) error {
+	newDraws, err := scrapeLive()
+	if err != nil {
+		return err
+	}
+	for _, d := range newDraws {
+		err = d.CheckAndInsert(db)
+		if err != nil {
+			return err
+		}
+	}
+	return RefreshViews(db)
+}
+
 // ImportLatest imports the latest entries from the API
 func ImportLatest(db *sql.DB) error {
 	resp, err := http.Get(fetchURL)

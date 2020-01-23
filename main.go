@@ -64,8 +64,22 @@ func doFetchLatest() {
 	}
 }
 
+func doScrapeLatest() {
+	db := connectToDb()
+	defer db.Close()
+	err := quickdraw.ScrapeLiveDraws(db)
+	if err != nil {
+		log.Println(err)
+	}
+}
+
 func fetchLatestDrawsCron() {
-	gocron.Every(15).Minutes().Do(doFetchLatest)
+	gocron.Every(60).Minutes().Do(doFetchLatest)
+	<-gocron.Start()
+}
+
+func scrapeLatestDrawsCron() {
+	gocron.Every(245).Seconds().Do(doScrapeLatest)
 	<-gocron.Start()
 }
 
@@ -80,7 +94,9 @@ func main() {
 	kingpin.Parse()
 
 	if *doScrape {
-		_, err := quickdraw.Scrape()
+		db := connectToDb()
+		defer db.Close()
+		err := quickdraw.ScrapeLiveDraws(db)
 		if err != nil {
 			log.Println(err)
 			os.Exit(1)
@@ -117,6 +133,8 @@ func main() {
 		defer db.Close()
 
 		go fetchLatestDrawsCron()
+		go scrapeLatestDrawsCron()
+
 		a := quickdraw.API{
 			Db:          db,
 			Host:        apiHost,
