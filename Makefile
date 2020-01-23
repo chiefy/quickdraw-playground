@@ -1,5 +1,9 @@
 csvurl := https://data.ny.gov/api/views/7sqk-ycpk/rows.csv?accessType=DOWNLOAD&bom=true&format=true&sorting=true
 
+
+$(GOPATH)/bin/dep:
+	@curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+
 .PHONY: all
 all: clean csv vendor build-ui 
 	@docker-compose rm -fv 
@@ -10,7 +14,7 @@ all: clean csv vendor build-ui
 stop:
 	@docker-compose stop; docker-compose rm -fv
 
-vendor:
+vendor: $(GOPATH)/bin/dep
 	@dep ensure
 
 .PHONY: csv

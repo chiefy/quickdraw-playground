@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/chiefy/quick-draw-explorer/pkg"
+	"strconv"
+
+	quickdraw "github.com/chiefy/quick-draw-explorer/pkg"
 	"github.com/jasonlvhit/gocron"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
-	"strconv"
 
 	"database/sql"
 	"fmt"
@@ -14,13 +15,14 @@ import (
 )
 
 var (
-	doImport    = kingpin.Flag("import", "Import and parse CSV from the internet").Bool()
-	doPoll      = kingpin.Flag("poll", "Poll the API for latest data").Bool()
-	doServe     = kingpin.Flag("serve", "Start the API server").Bool()
-	allowedURLs string
+	doImport = kingpin.Flag("import", "Import and parse CSV from the internet").Bool()
+	doPoll   = kingpin.Flag("poll", "Poll the API for latest data").Bool()
+	doServe  = kingpin.Flag("serve", "Start the API server").Bool()
+	doScrape = kingpin.Flag("scrape", "Scrape the live website for data").Bool()
 
-	apiPort int
-	apiHost string
+	allowedURLs string
+	apiPort     int
+	apiHost     string
 )
 
 const (
@@ -76,6 +78,15 @@ func connectToDb() *sql.DB {
 
 func main() {
 	kingpin.Parse()
+
+	if *doScrape {
+		_, err := quickdraw.Scrape()
+		if err != nil {
+			log.Println(err)
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
 
 	if *doImport {
 		db := connectToDb()
